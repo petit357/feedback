@@ -5,14 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>설계안 피드백과 다짐</title>
 <!--
-  2026 AI·디지털 기반 교육혁신 심화연수 (E역량) · 2차시 웹앱
-  ─────────────────────────────────────────────
-  설정 방법
-  1. 아래 CONFIG.firebase 에 Firebase 웹 앱 설정값을 붙여 넣습니다.
-     (비워 두면 '미리보기 모드'로 열리고, 입력 내용은 이 기기에만 저장됩니다.)
-  2. CONFIG.groupCount(모둠 수)와 CONFIG.groupTitles(모둠별 설계안 제목, 선택)를 바꿉니다.
-  3. Firestore 보안 규칙은 함께 드린 안내를 참고하세요.
-  4. GitHub에 올려 Vercel로 배포한 뒤, 주소를 QR 코드로 만들어 슬라이드에 넣습니다.
+  2026 AI·디지털 기반 교육혁신 심화연수 (E역량) · 2차시 웹앱 (Firebase 버전)
+  맨 아래 스크립트의 CONFIG.firebase 에 Firebase 웹 앱 설정값을 붙여 넣으면 됩니다.
+  비워 두면 '미리보기 모드'로 열리고, 입력 내용은 그 기기에만 저장됩니다.
 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -85,6 +80,16 @@ textarea:focus,input:focus,button:focus-visible{outline:3px solid color-mix(in s
 .filter button{appearance:none;font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer}
 .filter button[aria-pressed="true"]{border-color:var(--navy);color:var(--navy);background:var(--navy-soft)}
 .message{border-left:5px solid var(--red);background:var(--surface);border-radius:0 12px 12px 0;padding:16px;white-space:pre-wrap;font-size:15px;overflow-wrap:anywhere}
+.btnrow{display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.ghost{appearance:none;font:inherit;font-size:15px;font-weight:700;padding:15px 8px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tools{display:flex;gap:6px}
+.tools button{appearance:none;font:inherit;font-size:13px;font-weight:700;padding:6px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.tools button.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,var(--line))}
+.tools button.save{background:var(--navy);border-color:var(--navy);color:var(--on-navy)}
+.editbox{display:flex;flex-direction:column;gap:10px}
+.editbox textarea{min-height:70px}
+.reset{appearance:none;font:inherit;font-size:13px;font-weight:700;margin-top:16px;padding:10px;width:100%;border-radius:10px;border:1.5px dashed var(--line);background:transparent;color:var(--muted);cursor:pointer}
 .date{font-size:15px}
 .date b{color:var(--red)}
 .draw{appearance:none;font:inherit;font-size:18px;font-weight:800;width:100%;padding:18px;border:0;border-radius:14px;background:var(--red);color:#FFFFFF;cursor:pointer}
@@ -98,6 +103,13 @@ textarea:focus,input:focus,button:focus-visible{outline:3px solid color-mix(in s
 .stage .again{background:#FFFFFF;color:#00205B}
 .stage .close{background:transparent;color:#FFFFFF}
 @media (prefers-reduced-motion:no-preference){.stage .big.landed{animation:pop .5s ease-out}@keyframes pop{0%{transform:scale(.9);opacity:.4}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}}
+.modal{position:fixed;inset:0;z-index:30;background:rgba(10,16,32,.55);display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.modal .sheet{width:100%;max-width:380px;background:var(--bg);color:var(--fg);border-radius:16px;padding:22px 20px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal h2{margin:0;font-size:19px;font-weight:800}
+.modal p{margin:0;font-size:15px;color:var(--muted)}
+.modal input{font:inherit;font-size:22px;letter-spacing:.3em;text-align:center;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:12px;width:100%}
+.modal .err{color:var(--red);font-size:14px;font-weight:700;min-height:1.2em}
+.modal .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
 .check input{width:20px;height:20px;margin-top:2px;accent-color:var(--navy)}
 .wall{display:grid;grid-template-columns:1fr;gap:10px}
@@ -148,7 +160,10 @@ hr{border:0;border-top:1px solid var(--line);margin:4px 0}
     <textarea id="fbUse" placeholder="예) 평가 체크리스트를 우리 반 과학 수업에 써 보고 싶어요."></textarea>
   </div>
   <p class="hint" style="margin:-8px 0 0">한 칸만 채워도 보낼 수 있습니다. 이름은 남지 않습니다.</p>
-  <button class="primary" id="sendFb" disabled>피드백 보내기</button>
+  <div class="btnrow">
+    <button class="ghost" id="resetFb" type="button">입력 초기화</button>
+    <button class="primary" id="sendFb" disabled>피드백 보내기</button>
+  </div>
 </section>
 
 <!-- 우리 모둠 피드백 -->
@@ -189,14 +204,18 @@ hr{border:0;border-top:1px solid var(--line);margin:4px 0}
   </div>
 
   <label class="check"><input type="checkbox" id="pShare" checked> 이름 없이 ‘모두의 다짐’에 함께 올리기</label>
-  <button class="primary" id="savePledge" disabled>다짐 저장하기</button>
+  <div class="btnrow">
+    <button class="ghost" id="resetPledge" type="button">입력 초기화</button>
+    <button class="primary" id="savePledge" disabled>다짐 저장하기</button>
+  </div>
 </section>
 
 <!-- 모두의 다짐 -->
 <section role="tabpanel" id="panel-wall" aria-labelledby="tab-wall" hidden>
-  <button class="draw" id="drawBtn" type="button" disabled>랜덤 다짐 뽑기</button>
+  <button class="draw" id="drawBtn" type="button">랜덤 다짐 뽑기</button>
   <div class="summary"><strong>모두의 다짐</strong><span class="hint" id="wallCount"></span></div>
   <div class="wall" id="wall"><div class="empty">아직 올라온 다짐이 없습니다. ‘나의 다짐’ 탭에서 첫 다짐을 남겨 주세요.</div></div>
+  <button class="reset" id="resetWall" type="button">모든 다짐 초기화 (강사용)</button>
 </section>
 
 <!-- 뽑기 화면 -->
@@ -210,6 +229,18 @@ hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 </div>
 
 </main>
+<div class="modal" id="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h2 id="modalTitle"></h2>
+    <p id="modalMsg"></p>
+    <input type="password" id="modalInput" inputmode="numeric" autocomplete="off" aria-label="비밀번호">
+    <div class="err" id="modalErr"></div>
+    <div class="btns">
+      <button class="ghost" id="modalCancel" type="button">취소</button>
+      <button class="primary" id="modalOk" type="button">확인</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -219,6 +250,11 @@ const CONFIG = {
   // 모둠별 설계안 제목 (선택). 예: {1: "5학년 과학 · 날씨와 우리 생활", 2: "..."}
   groupTitles: {},
   courseName: "2026 AI·디지털 기반 교육혁신 심화연수",
+  // 랜덤 다짐 뽑기 비밀번호
+  drawPin: "0812",
+  // 강사용 전체 초기화 비밀번호
+  adminPin: "0812",
+  // Firebase 콘솔 → 프로젝트 설정 → 내 앱(웹) 의 firebaseConfig 값을 그대로 붙여 넣으세요.
   firebase: {
   apiKey: "AIzaSyAqmF_U7cZ3MTTK3AA_YDdKbXJZ4-mZSnc",
   authDomain: "ai-digital-feedback.firebaseapp.com",
@@ -240,8 +276,32 @@ function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.hidden = false;
   clearTimeout(toast._t); toast._t = setTimeout(() => { t.hidden = true; }, 2600);
 }
+let currentTab = "write";
 
-/* ---------- 저장소: Firebase가 설정되면 Firestore, 아니면 이 기기(localStorage) ---------- */
+/* ---------- 비밀번호·확인 창 ---------- */
+function openModal({ title, msg, input, okText }) {
+  return new Promise((resolve) => {
+    const m = $("modal"), inp = $("modalInput");
+    $("modalTitle").textContent = title; $("modalMsg").textContent = msg || "";
+    $("modalErr").textContent = ""; inp.value = ""; inp.hidden = !input;
+    $("modalOk").textContent = okText || "확인";
+    m.hidden = false;
+    setTimeout(() => (input ? inp : $("modalOk")).focus(), 30);
+    const done = (v) => {
+      m.hidden = true;
+      $("modalOk").onclick = $("modalCancel").onclick = inp.onkeydown = m.onclick = null;
+      resolve(v);
+    };
+    $("modalOk").onclick = () => done(input ? inp.value.trim() : true);
+    $("modalCancel").onclick = () => done(null);
+    inp.onkeydown = (e) => { if (e.key === "Enter") done(inp.value.trim()); if (e.key === "Escape") done(null); };
+    m.onclick = (e) => { if (e.target === m) done(null); };
+  });
+}
+const askConfirm = (title, msg, okText) => openModal({ title, msg, okText });
+const askPin = (title, msg) => openModal({ title, msg: msg || "비밀번호를 입력하세요.", input: true });
+
+/* ---------- 저장소: Firebase가 설정되면 Firestore, 아니면 이 기기(미리보기) ---------- */
 function makeStore() {
   const fb = CONFIG.firebase;
   if (fb.apiKey && fb.projectId && window.firebase) {
@@ -250,15 +310,25 @@ function makeStore() {
       const db = firebase.firestore();
       const ts = () => firebase.firestore.FieldValue.serverTimestamp();
       const toMs = (d) => (d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() : Date.now());
+      const snapMap = (s) => s.docs.map((d) => ({ id: d.id, ...d.data(), ms: toMs(d.data()) }));
+      const err = () => toast("불러오지 못했습니다. 인터넷 연결을 확인해 주세요.");
       return {
         live: true,
-        addFeedback: (o) => db.collection("feedback").add({ ...o, createdAt: ts() }),
-        watchFeedback: (target, cb) => db.collection("feedback").where("target", "==", target)
-          .onSnapshot((s) => cb(s.docs.map((d) => ({ id: d.id, ...d.data(), ms: toMs(d.data()) }))),
-                      () => toast("피드백을 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.")),
-        addPledge: (o) => db.collection("pledges").add({ ...o, createdAt: ts() }),
-        watchPledges: (cb) => db.collection("pledges").limit(300)
-          .onSnapshot((s) => cb(s.docs.map((d) => ({ id: d.id, ...d.data(), ms: toMs(d.data()) }))), () => {})
+        add: async (col, o) => (await db.collection(col).add({ ...o, createdAt: ts() })).id,
+        update: (col, id, o) => db.collection(col).doc(id).update(o),
+        remove: (col, id) => db.collection(col).doc(id).delete(),
+        clear: async (col, target, pin) => {
+          if (pin !== String(CONFIG.adminPin)) throw new Error("비밀번호가 맞지 않습니다.");
+          let q = db.collection(col);
+          if (target) q = q.where("target", "==", target);
+          const s = await q.get();
+          for (let i = 0; i < s.docs.length; i += 400) {
+            const b = db.batch(); s.docs.slice(i, i + 400).forEach((d) => b.delete(d.ref)); await b.commit();
+          }
+          return s.size;
+        },
+        watchFeedback: (target, cb) => db.collection("feedback").where("target", "==", target).onSnapshot((s) => cb(snapMap(s)), err),
+        watchPledges: (cb) => db.collection("pledges").limit(300).onSnapshot((s) => cb(snapMap(s)), err)
       };
     } catch (e) { console.error(e); }
   }
@@ -268,15 +338,44 @@ function makeStore() {
   const write = (k, arr) => { LS.set("preview_" + k, arr); subs[k].forEach((f) => f()); };
   return {
     live: false,
-    addFeedback: async (o) => write("feedback", [...read("feedback"), { ...o, id: String(Date.now()), ms: Date.now() }]),
+    add: async (col, o) => { const id = Date.now() + "-" + Math.random().toString(36).slice(2, 7); write(col, [...read(col), { ...o, id, ms: Date.now() }]); return id; },
+    update: async (col, id, o) => write(col, read(col).map((d) => (d.id === id ? { ...d, ...o } : d))),
+    remove: async (col, id) => write(col, read(col).filter((d) => d.id !== id)),
+    clear: async (col, target, pin) => {
+      if (pin !== String(CONFIG.adminPin)) throw new Error("비밀번호가 맞지 않습니다.");
+      const all = read(col); const keep = target ? all.filter((d) => d.target !== target) : [];
+      write(col, keep); return all.length - keep.length;
+    },
     watchFeedback: (target, cb) => {
       const run = () => cb(read("feedback").filter((d) => d.target === target));
       subs.feedback.push(run); run();
       return () => { subs.feedback = subs.feedback.filter((f) => f !== run); };
     },
-    addPledge: async (o) => write("pledges", [...read("pledges"), { ...o, id: String(Date.now()), ms: Date.now() }]),
     watchPledges: (cb) => { const run = () => cb(read("pledges")); subs.pledges.push(run); run(); return () => {}; }
   };
+}
+
+/* 내가 쓴 글 (이 기기에서 쓴 글만 수정·삭제 버튼이 보입니다) */
+const mine = {
+  has: (col, id) => LS.get("mine_" + col, []).includes(id),
+  add: (col, id) => LS.set("mine_" + col, [...LS.get("mine_" + col, []), id]),
+  drop: (col, id) => LS.set("mine_" + col, LS.get("mine_" + col, []).filter((x) => x !== id))
+};
+/* 강사용 전체 초기화 */
+async function adminClear(col, target, what) {
+  const ok = await askConfirm(what + " 초기화", what + "을(를) 모두 지웁니다. 지운 내용은 되돌릴 수 없습니다.", "다음");
+  if (!ok) return;
+  const pin = await askPin(what + " 초기화", "강사용 비밀번호를 입력하세요.");
+  if (pin == null) return;
+  try { const n = await store.clear(col, target, pin); toast(what + " " + n + "개를 지웠습니다."); }
+  catch (e) { console.error(e); toast((e && e.message) || "초기화하지 못했습니다."); }
+}
+/* 카드에 붙는 수정·삭제 버튼 */
+function ownerTools(onEdit, onDelete) {
+  const box = document.createElement("div"); box.className = "tools";
+  if (onEdit) { const e = document.createElement("button"); e.type = "button"; e.textContent = "수정"; e.addEventListener("click", onEdit); box.appendChild(e); }
+  const d = document.createElement("button"); d.type = "button"; d.textContent = "삭제"; d.className = "danger"; d.addEventListener("click", onDelete);
+  box.appendChild(d); return box;
 }
 const store = makeStore();
 $("modeBadge").hidden = store.live;
@@ -288,7 +387,12 @@ function showTab(name) {
     $("tab-" + t).setAttribute("aria-selected", String(t === name));
     $("panel-" + t).hidden = t !== name;
   });
+  currentTab = name;
   LS.set("tab", name);
+  if (store.refresh) {
+    if (name === "read") store.refresh("feedback");
+    if (name === "wall") store.refresh("pledges");
+  }
 }
 tabs.forEach((t) => $("tab-" + t).addEventListener("click", () => showTab(t)));
 
@@ -324,12 +428,13 @@ function renderWrite() {
 $("sendFb").addEventListener("click", async () => {
   const btn = $("sendFb"); btn.disabled = true;
   try {
-    await store.addFeedback({
+    const id = await store.add("feedback", {
       target, from: myGroup,
       good: $("fbGood").value.trim().slice(0, 1000),
       ask: $("fbAsk").value.trim().slice(0, 1000),
       use: $("fbUse").value.trim().slice(0, 1000)
     });
+    mine.add("feedback", id);
     toast(target + "모둠에 피드백을 보냈습니다.");
     fbFields.forEach((id) => { $(id).value = ""; });
     target = null;
@@ -338,6 +443,53 @@ $("sendFb").addEventListener("click", async () => {
   }
   renderWrite();
 });
+$("resetFb").addEventListener("click", () => {
+  fbFields.forEach((id) => { $(id).value = ""; });
+  target = null; renderWrite(); toast("입력한 내용을 지웠습니다.");
+});
+
+/* ---------- 수정 중인 글 ---------- */
+let editing = null; // { col, id, values }
+function startEdit(col, d, keys) {
+  const values = {}; keys.forEach((k) => { values[k] = d[k] || ""; });
+  editing = { col, id: d.id, values };
+}
+function editBox(keys, labels) {
+  const box = document.createElement("div"); box.className = "editbox";
+  keys.forEach((k, i) => {
+    const r = document.createElement("div"); r.className = "row";
+    if (labels) { const t = document.createElement("span"); t.className = "tag " + k; t.textContent = labels[i]; t.style.alignSelf = "flex-start"; r.appendChild(t); }
+    const ta = document.createElement("textarea"); ta.value = editing.values[k];
+    ta.addEventListener("input", () => { editing.values[k] = ta.value; });
+    r.appendChild(ta); box.appendChild(r);
+  });
+  const act = document.createElement("div"); act.className = "tools";
+  const save = document.createElement("button"); save.type = "button"; save.textContent = "저장"; save.className = "save";
+  const cancel = document.createElement("button"); cancel.type = "button"; cancel.textContent = "취소";
+  act.append(save, cancel); box.appendChild(act);
+  return { box, save, cancel };
+}
+async function saveEdit(rerender) {
+  const { col, id, values } = editing;
+  const clean = {}; Object.keys(values).forEach((k) => { clean[k] = values[k].trim().slice(0, k === "text" ? 500 : 1000); });
+  if (!Object.values(clean).some(Boolean)) { toast("내용을 한 칸 이상 남겨 주세요."); return; }
+  try { await store.update(col, id, clean); editing = null; toast("수정했습니다."); }
+  catch (e) { console.error(e); toast("수정하지 못했습니다. 다시 눌러 주세요."); }
+  rerender();
+}
+async function removeMine(col, id, rerender) {
+  if (mine.has(col, id)) {
+    if (!(await askConfirm("글 삭제", "이 글을 삭제할까요? 삭제한 글은 되돌릴 수 없습니다.", "삭제"))) return;
+  } else {
+    // 다른 사람이 쓴 글은 강사용 비밀번호로만 삭제
+    const pin = await askPin("글 삭제", "다른 선생님이 쓴 글입니다. 강사용 비밀번호를 입력하면 삭제됩니다.");
+    if (pin == null) return;
+    if (pin !== String(CONFIG.adminPin)) { toast("비밀번호가 맞지 않습니다."); return; }
+  }
+  try { await store.remove(col, id); mine.drop(col, id); if (editing && editing.id === id) editing = null; toast("삭제했습니다."); }
+  catch (e) { console.error(e); toast("삭제하지 못했습니다. 다시 눌러 주세요."); }
+  rerender();
+}
 
 /* ---------- 우리 모둠 피드백 ---------- */
 let readG = LS.get("myGroup", null), unsubRead = null, readFilter = "all", readDocs = [];
@@ -347,7 +499,10 @@ function watchRead() {
   if (unsubRead) unsubRead();
   if (!readG) return;
   $("readArea").innerHTML = '<div class="empty">불러오는 중…</div>';
-  unsubRead = store.watchFeedback(readG, (docs) => { readDocs = docs.sort((a, b) => b.ms - a.ms); renderRead(); });
+  unsubRead = store.watchFeedback(readG, (docs) => {
+    readDocs = docs.sort((a, b) => b.ms - a.ms);
+    if (!(editing && editing.col === "feedback")) renderRead(); // 고치는 중에는 화면을 다시 그리지 않음
+  });
 }
 const KINDS = [["good", "좋았던 점"], ["ask", "궁금한 점"], ["use", "적용하고 싶은 점"]];
 function renderRead() {
@@ -361,7 +516,9 @@ function renderRead() {
   if (!readDocs.length) {
     const e = document.createElement("div"); e.className = "empty"; e.style.marginTop = "12px";
     e.textContent = "아직 받은 피드백이 없습니다. 다른 모둠이 보내면 바로 나타납니다.";
-    area.appendChild(e); return;
+    area.appendChild(e);
+    area.appendChild(resetButton(readG + "모둠 피드백 초기화 (강사용)", () => adminClear("feedback", readG, readG + "모둠이 받은 피드백")));
+    return;
   }
   const f = document.createElement("div"); f.className = "filter"; f.style.margin = "12px 0";
   [["all", "전체"], ...KINDS].forEach(([k, label]) => {
@@ -374,19 +531,35 @@ function renderRead() {
   area.appendChild(f);
   const list = document.createElement("div"); list.className = "list";
   readDocs.forEach((d) => {
+    const c = document.createElement("article"); c.className = "card";
+    if (editing && editing.col === "feedback" && editing.id === d.id) {
+      const ed = editBox(KINDS.map(([k]) => k), KINDS.map(([, l]) => l));
+      ed.save.addEventListener("click", () => saveEdit(renderRead));
+      ed.cancel.addEventListener("click", () => { editing = null; renderRead(); });
+      c.appendChild(ed.box); list.appendChild(c); return;
+    }
     const kinds = KINDS.filter(([k]) => d[k] && (readFilter === "all" || readFilter === k));
     if (!kinds.length) return;
-    const c = document.createElement("article"); c.className = "card";
     kinds.forEach(([k, label]) => {
       const r = document.createElement("div"); r.className = "row";
       const t = document.createElement("span"); t.className = "tag " + k; t.textContent = label; t.style.alignSelf = "flex-start";
       const p = document.createElement("p"); p.textContent = d[k];
       r.append(t, p); c.appendChild(r);
     });
-    const m = document.createElement("div"); m.className = "meta"; m.textContent = d.from + "모둠에서 보냄";
-    c.appendChild(m); list.appendChild(c);
+    const own = mine.has("feedback", d.id);
+    const foot = document.createElement("div"); foot.className = "foot";
+    const m = document.createElement("div"); m.className = "meta"; m.textContent = own ? "내가 쓴 피드백" : "";
+    foot.append(m, ownerTools(
+      own ? () => { startEdit("feedback", d, KINDS.map(([k]) => k)); renderRead(); } : null,
+      () => removeMine("feedback", d.id, renderRead)));
+    c.appendChild(foot); list.appendChild(c);
   });
   area.appendChild(list);
+  area.appendChild(resetButton(readG + "모둠 피드백 초기화 (강사용)", () => adminClear("feedback", readG, readG + "모둠이 받은 피드백")));
+}
+function resetButton(label, onClick) {
+  const b = document.createElement("button"); b.type = "button"; b.className = "reset"; b.textContent = label;
+  b.addEventListener("click", onClick); return b;
 }
 
 /* ---------- 나의 다짐 ---------- */
@@ -422,23 +595,47 @@ $("copyBtn").addEventListener("click", async () => {
 $("savePledge").addEventListener("click", async () => {
   const btn = $("savePledge"); btn.disabled = true;
   try {
-    if ($("pShare").checked) await store.addPledge({ text: pledgeSentence().slice(0, 500) });
+    if ($("pShare").checked) { const id = await store.add("pledges", { text: pledgeSentence().slice(0, 500) }); mine.add("pledges", id); }
     LS.set("pledgeSaved", true);
     toast($("pShare").checked ? "다짐을 저장하고 ‘모두의 다짐’에 올렸습니다." : "다짐을 이 기기에 저장했습니다.");
   } catch (e) { console.error(e); toast("저장하지 못했습니다. 다시 눌러 주세요."); }
   renderPledge();
 });
+$("resetPledge").addEventListener("click", () => {
+  pFields.forEach((id) => { $(id).value = ""; });
+  renderPledge(); toast("입력한 내용을 지웠습니다.");
+});
 /* ---------- 모두의 다짐 ---------- */
 let pledges = [];
 store.watchPledges((docs) => {
   pledges = docs.filter((d) => d.text).sort((a, b) => b.ms - a.ms);
+  if (!(editing && editing.col === "pledges")) renderWall();
+});
+function renderWall() {
   const wall = $("wall");
   $("wallCount").textContent = pledges.length ? pledges.length + "개" : "";
-  $("drawBtn").disabled = !pledges.length;
   if (!pledges.length) { wall.innerHTML = '<div class="empty">아직 올라온 다짐이 없습니다. ‘나의 다짐’ 탭에서 첫 다짐을 남겨 주세요.</div>'; return; }
   wall.innerHTML = "";
-  pledges.forEach((d) => { const c = document.createElement("div"); c.className = "card"; const p = document.createElement("p"); p.textContent = "“" + d.text + "”"; c.appendChild(p); wall.appendChild(c); });
-});
+  pledges.forEach((d) => {
+    const c = document.createElement("div"); c.className = "card";
+    if (editing && editing.col === "pledges" && editing.id === d.id) {
+      const ed = editBox(["text"]);
+      ed.save.addEventListener("click", () => saveEdit(renderWall));
+      ed.cancel.addEventListener("click", () => { editing = null; renderWall(); });
+      c.appendChild(ed.box); wall.appendChild(c); return;
+    }
+    const p = document.createElement("p"); p.textContent = "“" + d.text + "”"; c.appendChild(p);
+    const own = mine.has("pledges", d.id);
+    const foot = document.createElement("div"); foot.className = "foot";
+    const m = document.createElement("div"); m.className = "meta"; m.textContent = own ? "내가 쓴 다짐" : "";
+    foot.append(m, ownerTools(
+      own ? () => { startEdit("pledges", d, ["text"]); renderWall(); } : null,
+      () => removeMine("pledges", d.id, renderWall)));
+    c.appendChild(foot);
+    wall.appendChild(c);
+  });
+}
+$("resetWall").addEventListener("click", () => adminClear("pledges", null, "모두의 다짐"));
 
 /* ---------- 랜덤 다짐 뽑기 ---------- */
 let drawn = new Set(), rolling = null;
@@ -484,7 +681,13 @@ function closeStage() {
   if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
   $("drawBtn").focus();
 }
-$("drawBtn").addEventListener("click", draw);
+$("drawBtn").addEventListener("click", async () => {
+  const pin = await askPin("랜덤 다짐 뽑기", "뽑기 비밀번호를 입력하세요.");
+  if (pin == null) return;
+  if (pin !== CONFIG.drawPin) { toast("비밀번호가 맞지 않습니다."); return; }
+  if (!pledges.length) { toast("아직 올라온 다짐이 없습니다."); return; }
+  draw();
+});
 $("againBtn").addEventListener("click", draw);
 $("closeStage").addEventListener("click", closeStage);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("stage").hidden) closeStage(); });
